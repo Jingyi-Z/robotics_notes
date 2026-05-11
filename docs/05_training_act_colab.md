@@ -368,20 +368,42 @@ For LoRA / PEFT fine-tuning, see
 If you outgrow a single GPU:
 <https://huggingface.co/docs/lerobot/multi_gpu_training>.
 
-### 6.3 Extra sensor data (AnySkin example)
+### 6.3 Extra sensor data (AnySkin / tactile example)
 
-Store sensor readings as `observation.environment_state` (a 1D float vector)
-in the dataset and ACT will pick it up automatically — it adds a transformer
-token for that input with no model code changes:
+Tactile sensors recorded via `--robot.tactile_sensors=...` (see
+[`02_hardware_setup.md` §3a](02_hardware_setup.md#3a-tactile-sensors-anyskin-etc))
+land in the dataset under `observation.tactile.<sensor_name>` — e.g. a sensor
+declared with the dict key `primary` becomes `observation.tactile.primary`.
+
+To make ACT actually consume those features, pass them explicitly at train
+time:
 
 ```bash
 lerobot-train \
   --dataset.repo_id=${HF_USER}/my_anyskin_dataset \
   --policy.type=act \
+  --policy.use_tactile=true \
+  --policy.tactile_features='["observation.tactile.primary"]' \
   --policy.repo_id=${HF_USER}/act_so101_anyskin \
   --output_dir=outputs/train/act_so101_anyskin \
   --policy.device=cuda
 ```
+
+Notes on the flags:
+
+- **`--policy.use_tactile=true`** — turns on the tactile input head. Without
+  this, the columns sit in the dataset unused.
+- **`--policy.tactile_features='[...]'`** — JSON list of dataset keys to feed
+  into that head. Order matters; the model concatenates them in the order
+  given. Multiple sensors:
+  `'["observation.tactile.left_finger", "observation.tactile.right_finger"]'`.
+- The same two flags must be passed at **eval / record-with-policy** time
+  too, or the policy will be loaded without its tactile head wired up.
+
+For older datasets that stored tactile readings as `observation.environment_state`
+(a generic 1D float vector), ACT picks those up automatically without
+`--policy.use_tactile` — but `observation.tactile.*` is the current convention
+and what `lerobot-record` writes when you use `--robot.tactile_sensors=...`.
 
 Things to watch:
 

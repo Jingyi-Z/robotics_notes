@@ -74,6 +74,19 @@ The camera config **must match** what the policy was trained on — same key
 name (`front`) and same dimensions. ACT keys on feature shapes; if the
 observation shape changes, the forward pass errors immediately.
 
+If the policy was trained with tactile inputs, also re-pass the tactile
+flags here, exactly as at train time:
+
+```bash
+--robot.tactile_sensors='{primary: {"port": "/dev/ttyUSB0", "baud_rate": 2000000}}' \
+--policy.use_tactile=true \
+--policy.tactile_features='["observation.tactile.primary"]' \
+```
+
+Same rule as cameras: the sensor's dict key (`primary`) must match what the
+dataset/training used, since it drives the `observation.tactile.<name>`
+feature key.
+
 > Tip from the official tutorial: you can leave the leader connected with
 > `--teleop.*` flags too, which lets you take over between episodes without
 > restarting the script. For pure evaluation runs I skip it.

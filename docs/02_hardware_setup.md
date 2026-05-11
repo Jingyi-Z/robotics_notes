@@ -238,6 +238,59 @@ Notes:
 >>>>>>> bda26fb (add notes)
 ---
 
+## 3a. Tactile sensors (AnySkin etc.)
+
+Tactile sensors plug in over serial (USB-to-UART) and are configured with the
+same dict-of-dicts pattern as cameras, just under a different flag:
+
+```bash
+--robot.tactile_sensors='{primary: {"port": "/dev/ttyUSB0", "baud_rate": 2000000}}' \
+```
+
+The dict key (`primary` here) is the **sensor name** — it becomes the suffix
+on the dataset's observation key (`observation.tactile.primary`), and the
+training command has to reference that exact key (see
+[`05_training_act_colab.md` §6.3](05_training_act_colab.md#63-extra-sensor-data-anyskin-example)).
+Keep it consistent across record, replay, train, and eval — same rule as
+camera keys.
+
+Required fields per sensor:
+
+- **`port`** — serial device path. On Linux this is typically `/dev/ttyUSB0`
+  (or `/dev/ttyUSB1`, etc. — `dmesg | tail` after plugging in shows which).
+  On macOS it's `/dev/tty.usbserial-*`. On Windows / WSL2 it's a `COM*` port
+  on the host, and you need `usbipd attach` to expose it inside WSL.
+- **`baud_rate`** — the sensor's streaming rate. AnySkin and similar
+  high-rate tactile devices run at **2 000 000** (2 Mbaud); slower sensors
+  may use 115200 or 921600. Match what the sensor firmware expects, or
+  reads will be garbage.
+
+Multiple sensors go in the same dict — e.g. one per fingertip:
+
+```bash
+--robot.tactile_sensors='{left_finger: {"port": "/dev/ttyUSB0", "baud_rate": 2000000}, right_finger: {"port": "/dev/ttyUSB1", "baud_rate": 2000000}}' \
+```
+
+Gotchas:
+
+- **`dialout` group** — on Linux the user running `lerobot-teleoperate` must
+  be in `dialout` (or whatever group owns `/dev/ttyUSB*`). Otherwise you get
+  a permission-denied at open. See
+  [`01_environment_setup.md`](01_environment_setup.md#3-linux-setup-ubuntu-2204--2404).
+- **Port reshuffling** — `/dev/ttyUSB0` can swap with the arm's serial port
+  after a reboot. A `udev` rule keyed on the USB-serial chip's serial number
+  gives you a stable symlink (e.g. `/dev/anyskin_primary`).
+- **2 Mbaud needs a good bridge** — cheap CH340 adapters drop frames at
+  2 Mbaud. FTDI FT232H/FT2232 works reliably; some CP210x revisions are
+  fine too. If you see corrupted readings, try a different cable/adapter
+  before blaming the sensor.
+- **For training**, tactile readings need to be aligned to camera frames at
+  the dataset FPS — see
+  [`05_training_act_colab.md`](05_training_act_colab.md#63-extra-sensor-data-anyskin-example)
+  for how ACT consumes this as `observation.environment_state`.
+
+---
+
 ## 4. Conventions for `--robot.id` / `--teleop.id`
 
 The `id` is **how LeRobot looks up the calibration**. Two rules that have
