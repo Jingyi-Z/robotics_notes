@@ -1,7 +1,11 @@
 import serial
 import struct
 
+<<<<<<< HEAD
 PORT = "/dev/cu.usbmodem197004501"  
+=======
+PORT = "/dev/cu.usbmodem197004501"  # change to match your `ls` output
+>>>>>>> origin/main
 
 ser = serial.Serial(PORT, 2000000, timeout=1)
 
