@@ -19,12 +19,14 @@ loop documented here is:
 | 03 | Recording + replaying demonstrations | [`docs/03_record_replay.md`](docs/03_record_replay.md) |
 | 04 | Running a trained policy locally (evaluation) | [`docs/04_evaluation.md`](docs/04_evaluation.md) |
 | 05 | Training ACT on Google Colab | [`docs/05_training_act_colab.md`](docs/05_training_act_colab.md) |
+| 06 | MLX90393 Hall tactile sensor integration | [`docs/06_tactile_sensor.md`](docs/06_tactile_sensor.md) |
 
 ## Hardware
 
 - SO-ARM 101 — leader + follower pair, in two vendor variants (WOWROBO, SEEED).
 - USB webcam (1080p @ 30 FPS) for the `front` observation.
-- Optional future addition: AnySkin tactile sensor — covered briefly in doc 05.
+- MLX90393 Hall-effect magnetometer + Teensy 4.1 bridge for tactile sensing on
+  the gripper pad — see doc 06.
 
 ## Software
 

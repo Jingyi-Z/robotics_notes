@@ -1,0 +1,5 @@
+# Confidential / local-only capture data
+capture_images/
+**/capture_images/
+output/capture_images/
+outputs/capture_images/
