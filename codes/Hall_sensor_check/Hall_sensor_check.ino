@@ -30,7 +30,7 @@ void setup() {
   }
 
   // Configure the chip. Lower oversampling → faster readings.
-  sensor.setGain(MLX90393_GAIN_2_5X); // Amplifier gain (1x to 5x). Higher gain, higher sensitivity.
+  sensor.setGain(MLX90393_GAIN_5X); // Amplifier gain (1x to 5x). Higher gain, higher sensitivity.
   sensor.setResolution(MLX90393_X, MLX90393_RES_16); //resolution (RES_16 most precise to RES_19 widest range)
   sensor.setResolution(MLX90393_Y, MLX90393_RES_16);
   sensor.setResolution(MLX90393_Z, MLX90393_RES_16);
