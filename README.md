@@ -10,6 +10,10 @@ loop documented here is:
 4. Train an **ACT** policy on Google Colab from that dataset.
 5. Pull the trained policy back to the laptop and roll it out on the real robot.
 
+A custom MLX90393 Hall tactile sensor is wired into the gripper as a new
+observation modality, with a generic sensor-framework extension to LeRobot
+living in the companion fork [`lerobotac`](https://github.com/Jingyi-Z/lerobotac).
+
 ## Documentation
 
 | # | Topic | Doc |
@@ -20,20 +24,37 @@ loop documented here is:
 | 04 | Running a trained policy locally (evaluation) | [`docs/04_evaluation.md`](docs/04_evaluation.md) |
 | 05 | Training ACT on Google Colab | [`docs/05_training_act_colab.md`](docs/05_training_act_colab.md) |
 | 06 | MLX90393 Hall tactile sensor integration | [`docs/06_tactile_sensor.md`](docs/06_tactile_sensor.md) |
+| 07 | Sensor noise characterization & findings | [`docs/07_sensor_noise_findings.md`](docs/07_sensor_noise_findings.md) |
 
 ## Hardware
 
 - SO-ARM 101 — leader + follower pair, in two vendor variants (WOWROBO, SEEED).
-- USB webcam (1080p @ 30 FPS) for the `front` observation.
+- USB webcam(s) (1080p @ 30 FPS) for the `front` observation; optional second
+  camera for the `top` or `wrist` view.
 - MLX90393 Hall-effect magnetometer + Teensy 4.1 bridge for tactile sensing on
-  the gripper pad — see doc 06.
+  the gripper pad — see docs 06 and 07.
 
 ## Software
 
-- LeRobot (editable clone of https://github.com/huggingface/lerobot).
-- Python 3.12, ffmpeg 4.4+, PyTorch with MPS (Mac) or CUDA (training box).
+- [`lerobotac`](https://github.com/Jingyi-Z/lerobotac) — our fork of LeRobot
+  with the generic sensor framework and MLX90393 driver. Sensor work lives on
+  the `hall-sensor` branch.
+- Python 3.12, ffmpeg 7.x, PyTorch with MPS (Mac) or CUDA (training box).
 - Hugging Face Hub for dataset + policy storage.
 - (Optional) Weights & Biases for training run dashboards.
+
+## Datasets used in this repo's analyses
+
+The sensor noise characterization in doc 07 references three datasets on the
+Hub (all public, all SO-101 follower with the MLX90393 gripper sensor):
+
+- `Jingyi-Z/noise_analysis_0514_20260514_170959` — 30 s idle noise floor
+- `Jingyi-Z/thermal_drift_test_20260514_181952` — 10 min stationary drift
+- `Jingyi-Z/motion_noise_test_20260514_200145` — three motion episodes
+
+The earlier `Jingyi-Z/pick_and_place_test_0513_20260513_175247` was recorded
+before the Bx-saturation fix and is **not safe for training** (Bx is
+identically zero across all samples). See doc 07 for context.
 
 ## Conventions
 
@@ -44,6 +65,9 @@ loop documented here is:
   easy to filter out from training data.
 - Per-arm `--robot.id` / `--teleop.id` strings are stable across runs and tie a
   calibration to a specific physical arm.
+- The robot type for tactile-equipped recordings is `so_sensor_follower`
+  (not the upstream `so101_follower`). It has its own calibration directory;
+  see [`06_tactile_sensor.md`](docs/06_tactile_sensor.md#5-recording-a-dataset).
 
 ## Sources
 
