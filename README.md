@@ -10,9 +10,11 @@ loop documented here is:
 4. Train an **ACT** policy on Google Colab from that dataset.
 5. Pull the trained policy back to the laptop and roll it out on the real robot.
 
-A custom MLX90393 Hall tactile sensor is wired into the gripper as a new
-observation modality, with a generic sensor-framework extension to LeRobot
-living in the companion fork [`lerobotac`](https://github.com/Jingyi-Z/lerobotac).
+Two tactile sensors are wired in as new observation modalities: a custom
+MLX90393 Hall sensor on the gripper pad, and a Paxini PX-6AX GEN3
+multidimensional tactile sensor. Both run through a generic sensor-framework
+extension to LeRobot living in the companion fork
+[`lerobotac`](https://github.com/Jingyi-Z/lerobotac).
 
 ## Documentation
 
@@ -25,6 +27,7 @@ living in the companion fork [`lerobotac`](https://github.com/Jingyi-Z/lerobotac
 | 05 | Training ACT on Google Colab | [`docs/05_training_act_colab.md`](docs/05_training_act_colab.md) |
 | 06 | MLX90393 Hall tactile sensor integration | [`docs/06_tactile_sensor.md`](docs/06_tactile_sensor.md) |
 | 07 | Sensor noise characterization & findings | [`docs/07_sensor_noise_findings.md`](docs/07_sensor_noise_findings.md) |
+| 08 | Paxini PX-6AX GEN3 tactile sensor integration | [`docs/08_paxini_tactile_sensor.md`](docs/08_paxini_tactile_sensor.md) |
 
 ## Hardware
 
@@ -33,12 +36,17 @@ living in the companion fork [`lerobotac`](https://github.com/Jingyi-Z/lerobotac
   camera for the `top` or `wrist` view.
 - MLX90393 Hall-effect magnetometer + Teensy 4.1 bridge for tactile sensing on
   the gripper pad — see docs 06 and 07.
+- Paxini PX-6AX GEN3 multidimensional tactile sensor (3-axis force per taxel,
+  9–239 taxels by variant) on a Paxini communication board — see doc 08.
 
 ## Software
 
 - [`lerobotac`](https://github.com/Jingyi-Z/lerobotac) — our fork of LeRobot
-  with the generic sensor framework and MLX90393 driver. Sensor work lives on
-  the `hall-sensor` branch.
+  with the generic sensor framework and the MLX90393 + Paxini PX-6AX GEN3
+  drivers. Sensor work lives on the `hall-sensor` branch.
+- [`paxini-sdk`](https://github.com/Jingyi-Z/paxini-sdk) — standalone Python
+  driver for the Paxini GEN3 sensors and their communication boards; the
+  Paxini driver in `lerobotac` wraps it.
 - Python 3.12, ffmpeg 7.x, PyTorch with MPS (Mac) or CUDA (training box).
 - Hugging Face Hub for dataset + policy storage.
 - (Optional) Weights & Biases for training run dashboards.
