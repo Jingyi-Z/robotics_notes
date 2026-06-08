@@ -203,40 +203,6 @@ as long as the Mac is on macOS 13+ and the iPhone is on iOS 16+. Useful if you
 want a high-quality wrist cam without buying one. On macOS, Intel RealSense
 cameras are unstable — use Linux if you have the choice.
 
-<<<<<<< HEAD
-=======
-### Resizing the camera frame
-
-`width` / `height` set the **capture** resolution (what the camera streams).
-`target_width` / `target_height` set the **output** resolution — LeRobot
-resizes each frame to those dims before handing it to the policy or recorder.
-Use this when you want to capture at a sane sensor resolution but feed the
-policy a smaller square (ACT and most LeRobot policies expect 224×224).
-
-RealSense example — capture 640×480, downscale to 224×224 for the policy:
-
-```bash
---robot.cameras='{top: {"type": "intelrealsense", "serial_number_or_name": "239222300740", "width": 640, "height": 480, "target_width": 224, "target_height": 224, "fps": 30}}' \
-```
-
-Same idea with an OpenCV / USB camera:
-
-```bash
---robot.cameras='{front: {"type": "opencv", "index_or_path": 0, "width": 1920, "height": 1080, "target_width": 224, "target_height": 224, "fps": 30}}' \
-```
-
-Notes:
-
-- For RealSense, identify the camera with `serial_number_or_name` (from
-  `lerobot-find-cameras realsense`), not `index_or_path`.
-- The capture (`width`/`height`) must be a resolution the camera actually
-  supports; the target dims can be anything — LeRobot resizes in software.
-- **Keep `target_width` / `target_height` consistent across record, replay,
-  and eval** — switching them mid-dataset breaks ACT, since the policy was
-  trained on a specific input size (see `03_record_replay.md` §"Pitfalls").
-
->>>>>>> bda26fb (add notes)
----
 
 ## 3a. Tactile sensors (AnySkin etc.)
 
