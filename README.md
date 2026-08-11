@@ -28,6 +28,7 @@ extension to LeRobot living in the companion fork
 | 06 | MLX90393 Hall tactile sensor integration | [`docs/06_tactile_sensor.md`](docs/06_tactile_sensor.md) |
 | 07 | Sensor noise characterization & findings | [`docs/07_sensor_noise_findings.md`](docs/07_sensor_noise_findings.md) |
 | 08 | Paxini PX-6AX GEN3 tactile sensor integration | [`docs/08_paxini_tactile_sensor.md`](docs/08_paxini_tactile_sensor.md) |
+| 09 | Tactile ACT experiments — design & code walkthrough | [`docs/09_tactile_act_experiments.md`](docs/09_tactile_act_experiments.md) |
 
 ## Hardware
 

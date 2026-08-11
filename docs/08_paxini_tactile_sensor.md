@@ -132,6 +132,70 @@ The serial board cannot report its sensor model, so `sensor_part_code` is requir
 ```bash
   --robot.sensors='{paxini_fingertip: {type: paxini, board_type: serial, port: COM3, sensor_part_code: PXSR-STDDP03A, output_format: distributed, poll_rate_hz: 30, auto_calibrate: true, display_rerun: true}}'
 ```
+### Two sensors on one High-Speed board
+
+The High-Speed board carries up to 28 modules. To record two fingertips at
+once (e.g. gripper finger in the middle-finger slot = module 10, wrist-roll
+finger in the little-finger slot = module 18), declare one sensor entry per
+module, all on the same `port`, each with its own `module_index`:
+
+```bash
+  --robot.sensors='{
+    paxini_gripper:    {type: paxini, board_type: high_speed, port: COM10, module_index: 10, output_format: distributed, poll_rate_hz: 30, auto_calibrate: true},
+    paxini_wrist_roll: {type: paxini, board_type: high_speed, port: COM10, module_index: 18, output_format: distributed, poll_rate_hz: 30, auto_calibrate: true}
+  }'
+```
+
+Both entries point at the same COM port. Internally they share one
+`HighSpeedHandBoard` and one auto-push stream (a serial port opens once, and
+one stream is consumed once); each sensor pulls its own module out of every
+frame and records to `observation.sensors.paxini_gripper` and
+`observation.sensors.paxini_wrist_roll` respectively. Give each a distinct
+`module_index` — two entries left at the default would both read the first
+active module and record identical data (the adapter logs a warning if it
+sees this).
+
+**Verified on hardware (2026-08-07):** two DP-S2015-Elite fingertips (module
+10 = Middle-Tip slot, module 18 = Little-Tip slot) recorded together with two
+cameras and both SO-101 arms into a single dataset. The full working command:
+
+```powershell
+lerobot-record `
+  --robot.type=so_sensor_follower --robot.port=COM8 --robot.id=so101_follower_seeed `
+  --robot.cameras="{ top: {type: opencv, index_or_path: 1, width: 640, height: 480, fps: 30, fourcc: MJPG}, wrist: {type: opencv, index_or_path: 2, width: 640, height: 480, fps: 30, fourcc: MJPG} }" `
+  --robot.sensors="{ paxini_gripper: {type: paxini, board_type: high_speed, port: COM10, module_index: 10, output_format: distributed, poll_rate_hz: 30, auto_calibrate: true, display_rerun: true}, paxini_wrist_roll: {type: paxini, board_type: high_speed, port: COM10, module_index: 18, output_format: distributed, poll_rate_hz: 30, auto_calibrate: true, display_rerun: true} }" `
+  --teleop.type=so101_leader --teleop.port=COM9 --teleop.id=so101_leader_seeed `
+  --dataset.repo_id="Jingyi-Z/two_finger_test" --dataset.num_episodes=1 `
+  --dataset.single_task="..." --dataset.push_to_hub=False --display_data=true
+```
+
+The recorded dataset has `observation.sensors.paxini_gripper` and
+`observation.sensors.paxini_wrist_roll`, each shape `(10, 52, 3)`, as
+independent columns.
+
+### Live rerun visualization
+
+With `--display_data=true` and `display_rerun: true` on each sensor, the
+recorder shows a rerun window with a custom SO-101 + Paxini layout (built by
+`init_rerun` in `lerobot/utils/visualization_utils.py`):
+
+- **Paxini forces (N)** — resultant Fx/Fy/Fz and per-taxel sums for every
+  fingertip, each series labeled by its entity path so the two fingertips are
+  distinguishable.
+- **One 3D point-cloud panel per fingertip** — the first sensor goes
+  top-right, the second replaces the bottom-right panel, extras become tabs.
+  Each panel shows that fingertip's 52-point cloud colored by Fz (blue at
+  rest, red on contact). Separate panels avoid the overlap you get from
+  drawing two identical-geometry clouds in one view.
+- Wrist + top cameras and joint/action time-series fill the rest.
+
+Two rerun-specific gotchas were solved to make this work (see the blocker
+table): rerun splits entity paths on `/` only, so the tactile data is logged
+under a real slash hierarchy `observation/sensors/<name>/...` (not the dotted
+`observation.sensors.<name>`) so the panel wildcards match; and the record
+script passes the Paxini sensor names into `init_rerun` so it can build one
+panel per fingertip.
+
 ### Notes
 - The Paxini stream lands at `observation.sensors.paxini_fingertip` with shape `(buffer_size, P, 3)` in `distributed` mode.
 - `display_rerun: true` logs a live 3D point cloud of the fingertip taxels (colored by Fz) into the `lerobot-record --display_data=true` viewer.
@@ -147,8 +211,14 @@ The serial board cannot report its sensor model, so `sensor_part_code` is requir
 | Serial Converter Board has no point-count register | By design | `sensor_part_code` must be supplied in the config; there is no auto-detection for this board |
 | `paxini-sdk` is a community wrapper, not the official SDK | Known | Every function was cross-checked against vendor scripts + hardware; see `docs/FINDINGS.md` |
 | Vendor materials document 12 sensor variants; no coordinate data for any beyond those 12 | Known | A 13th/14th variant would need its coordinate xlsx added to `sensor_registry` and its point count verified unique |
-| `PaxiniSensor` surfaces only one module of the High-Speed board's up-to-28 | Open | The board layer (`HighSpeedHandBoard`) already reads every active module; a multi-module adapter mode is future work |
+| Recording two+ sensors on one High-Speed board | Solved | Declare one `--robot.sensors` entry per module, all on the same `port` with distinct `module_index`. Instances share one board + one auto-push stream under the hood (`_SharedHighSpeedBoard`); each records its own `observation.sensors.<name>` column |
 | High-frequency rerun logging from the read thread can crowd the viewer | Mitigated | `poll_rate_hz` downsampling keeps the logged rate sane (e.g. 30 Hz) |
+| Two USB cameras drop frames on Windows (`latest frame is too old` / `read failed`) | Solved | USB 2.0 bandwidth saturation from uncompressed streams. Add `fourcc: MJPG` to each camera to send compressed frames (~10x less bandwidth). If it persists, plug cameras into ports on different USB controllers, or drop to `fps: 15` |
+| Two sensors on one board: second sensor's connect crashes the stream (`short read` / `frame head aa55 not found`) | Solved | The second sensor's `read_distribution_point_count` collided with the first sensor's running auto-push stream on the shared port. Fixed by pre-caching every active module's point count at board open (`_SharedHighSpeedBoard._open`), before any stream starts |
+| Live rerun Paxini panels empty because entity paths use dots | Solved | rerun splits entity paths on `/` only, so a dotted `observation.sensors.<name>` is ONE opaque path-part that a `/observation/sensors/**` wildcard can't match. Fixed by logging tactile data under a real slash hierarchy `observation/sensors/<name>/...` (`PaxiniSensor._log_to_rerun` and the `log_rerun_data` tactile branch) |
+| Two fingertips overlap in one 3D rerun panel | Solved | The record script passes the Paxini sensor names into `init_rerun`, which builds one 3D panel per fingertip (first top-right, second bottom-right replacing the Hall panel, extras as tabs) instead of a single combined cloud |
+| Recorded dataset folder has a timestamp suffix (`two_finger_test_20260807_183636`) | Known | `lerobot-record` appends a timestamp to the `repo_id`. Load a local dataset by its full timestamped folder name, or read `meta/info.json` + the parquet directly (see `lerobotac/verify_dataset.py`). `LeRobotDataset("<repo_id>")` without the suffix hits the Hub and 404s for a local-only (`push_to_hub=False`) dataset |
+| SO-101 follower gripper motor (id 6) "no status packet" on torque enable | Hardware | Intermittent connection on the last servo in the chain; reseat the gripper daisy-chain cable and power-cycle the arm. Not sensor-related |
 ---
 ## 7. References
 - paxini-sdk (this project's driver): <https://github.com/Jingyi-Z/paxini-sdk>
