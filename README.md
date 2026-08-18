@@ -48,6 +48,10 @@ extension to LeRobot living in the companion fork
 - [`paxini-sdk`](https://github.com/Jingyi-Z/paxini-sdk) — standalone Python
   driver for the Paxini GEN3 sensors and their communication boards; the
   Paxini driver in `lerobotac` wraps it.
+- [`lerobotac-dataset-visualizer`](https://huggingface.co/spaces/Jingyi-Z/lerobotac-dataset-visualizer)
+  — web viewer & annotator for tactile datasets (3D force arrows, raw
+  91 Hz stream, RGBD depth, per-episode-folder support, annotations); see
+  doc 08 §7.
 - Python 3.12, ffmpeg 7.x, PyTorch with MPS (Mac) or CUDA (training box).
 - Hugging Face Hub for dataset + policy storage.
 - (Optional) Weights & Biases for training run dashboards.

@@ -173,6 +173,32 @@ The recorded dataset has `observation.sensors.paxini_gripper` and
 `observation.sensors.paxini_wrist_roll`, each shape `(10, 52, 3)`, as
 independent columns.
 
+### Company-format recording (combined mode + raw sidecar)
+
+To record datasets schema-compatible with the company's format, use ONE
+sensor entry in `combined` mode instead of per-finger entries:
+
+```bash
+  --robot.sensors='{paxini_fingertip: {type: paxini, board_type: high_speed, port: COM10, output_format: combined, module_indices: [10, 18], record_raw_csv: true, auto_calibrate: true}}'
+```
+
+- **Main 30 Hz field**: `observation.sensors.paxini_fingertip`, shape
+  `(n_fingers, P, 3)` — e.g. `(2, 52, 3)` — the LATEST raw sample per finger
+  at each observation, no history buffer. Finger order = `module_indices`
+  list order (module 10 → `[0]`, module 18 → `[1]` in our setup — document
+  which physical finger each is!).
+- **Raw ~91 Hz sidecar** (`record_raw_csv: true`): per episode,
+  `sensors/paxini_fingertip/episode_{i:06d}/sensor_{n}.csv` with the
+  company's exact column schema (`timestamp_ns, frame_status,
+  time_calibration_offset_ns, calibrated_timestamp_ns, fx, fy, fz,
+  p_00_fx … p_{P-1}_fz`, UTF-8 BOM, epoch-ns clock), plus `alignment.json`
+  carrying the episode-start epoch time — the anchor needed to align raw
+  rows with main-table frames exactly (the company format lacks this and is
+  only alignable to ~1 s via first-sample heuristics).
+- Sidecars close on episode save and are deleted on re-record.
+- The old per-finger mode (separate `paxini_gripper`/`paxini_wrist_roll`
+  entries, `(N, P, 3)` ring buffers) remains unchanged.
+
 ### Live rerun visualization
 
 With `--display_data=true` and `display_rerun: true` on each sensor, the
@@ -220,7 +246,50 @@ panel per fingertip.
 | Recorded dataset folder has a timestamp suffix (`two_finger_test_20260807_183636`) | Known | `lerobot-record` appends a timestamp to the `repo_id`. Load a local dataset by its full timestamped folder name, or read `meta/info.json` + the parquet directly (see `lerobotac/verify_dataset.py`). `LeRobotDataset("<repo_id>")` without the suffix hits the Hub and 404s for a local-only (`push_to_hub=False`) dataset |
 | SO-101 follower gripper motor (id 6) "no status packet" on torque enable | Hardware | Intermittent connection on the last servo in the chain; reseat the gripper daisy-chain cable and power-cycle the arm. Not sensor-related |
 ---
-## 7. References
+## 7. Dataset visualizer & annotator
+
+Web tool for browsing and annotating tactile datasets (ours and the
+company's), deployed as a Hugging Face Space:
+
+**https://huggingface.co/spaces/Jingyi-Z/lerobotac-dataset-visualizer**
+
+Fork of `lerobot/visualize_dataset` (Next.js / react-three-fiber), source
+lives in the Space's git repo. Sign in with a HF account that has access to
+the dataset (real OAuth on the Space; running locally without OAuth shows a
+🔑 paste-token fallback instead), then enter the dataset `repo_id`.
+
+**Features on top of upstream:**
+
+- PXSR-style tactile: per-taxel 3D force arrows (direction = force vector,
+  green→red magnitude colormap), per-fingertip panels, contact timeline
+  (click to seek), per-episode + cross-episode tactile statistics.
+- Raw ~91 Hz stream viewer (±1.5 s window around the playhead, incl.
+  shear/normal slip indicator) — reads `sensors/**/*.csv` sidecars.
+- RGBD panels: color (MJPEG-in-MKV) + 16-bit depth (FFV1) are decoded
+  server-side with ffmpeg and rendered at the playhead (Turbo colormap,
+  per-camera frozen range); frame lookup goes through the per-stream
+  `timestamp.csv`, which corrects the company files' broken container
+  clocks (~3 ms alignment error).
+- Per-episode-folder datasets (company layout): episode auto-discovery at
+  any nesting depth drives the sidebar; bare repo URLs auto-redirect to the
+  first episode; `task.json` cards show instruction + 成功/失败 badge +
+  failure reason; extra unregistered cameras (RGB_Camera0–5) are surfaced.
+- Annotations tab: time-segment labels (grasp/slip/…, custom allowed),
+  Grounded-VQA style on-video bbox/keypoint marks, episode result +
+  quality grade + notes, JSON export.
+
+**Development notes** (for future maintenance):
+
+- Local dev: `bun install && bun dev` in the app folder; production build
+  `bun run build`. Deploy = `git push space main` to the Space repo.
+- `ffmpeg-static` must stay in `next.config.ts serverExternalPackages` —
+  bundling rewrites its binary path into `.next/` and breaks it.
+- The session cookie for private-video proxying expires after 8 h; the app
+  re-asserts it from the stored token on every page load.
+- Per-episode video/depth streams are cached server-side (3 GB LRU) —
+  first open per camera downloads the stream once.
+
+## 8. References
 - paxini-sdk (this project's driver): <https://github.com/Jingyi-Z/paxini-sdk>
 - LeRobot fork with the sensor framework: <https://github.com/Jingyi-Z/lerobotac> (`hall-sensor` branch)
 - Companion doc — MLX90393 Hall sensor: Doc #06
