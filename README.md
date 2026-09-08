@@ -29,6 +29,8 @@ extension to LeRobot living in the companion fork
 | 07 | Sensor noise characterization & findings | [`docs/07_sensor_noise_findings.md`](docs/07_sensor_noise_findings.md) |
 | 08 | Paxini PX-6AX GEN3 tactile sensor integration | [`docs/08_paxini_tactile_sensor.md`](docs/08_paxini_tactile_sensor.md) |
 | 09 | Tactile ACT experiments — design & code walkthrough | [`docs/09_tactile_act_experiments.md`](docs/09_tactile_act_experiments.md) |
+| 10 | Training pi0.5 (A0 vision-only baseline) | [`docs/10_pi05_training.md`](docs/10_pi05_training.md) |
+| 11 | Training ACT on a Slurm GPU cluster | [`docs/11_act_slurm_cluster_training.md`](docs/11_act_slurm_cluster_training.md) |
 
 ## Hardware
 
