@@ -32,6 +32,7 @@ extension to LeRobot living in the companion fork
 | 10 | Training pi0.5 (A0 vision-only baseline) | [`docs/10_pi05_training.md`](docs/10_pi05_training.md) |
 | 11 | Training ACT on a Slurm GPU cluster | [`docs/11_act_slurm_cluster_training.md`](docs/11_act_slurm_cluster_training.md) |
 | 12 | Training pi0.5 with LeRobot 0.6.1 on Slurm (ft + LoRA) | [`docs/12_pi05_lerobot061_slurm.md`](docs/12_pi05_lerobot061_slurm.md) |
+| 13 | Evaluating policies on a custom sensor robot (0.6.1 rollout) | [`docs/13_policy_rollout_custom_sensor_robot.md`](docs/13_policy_rollout_custom_sensor_robot.md) |
 
 ## Hardware
 
