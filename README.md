@@ -34,6 +34,7 @@ extension to LeRobot living in the companion fork
 | 12 | Training pi0.5 with LeRobot 0.6.1 on Slurm (ft + LoRA) | [`docs/12_pi05_lerobot061_slurm.md`](docs/12_pi05_lerobot061_slurm.md) |
 | 13 | Evaluating policies on a custom sensor robot (0.6.1 rollout) | [`docs/13_policy_rollout_custom_sensor_robot.md`](docs/13_policy_rollout_custom_sensor_robot.md) |
 | 14 | Rig drift and eval hygiene (health checks, valid comparisons) | [`docs/14_rig_drift_and_eval_hygiene.md`](docs/14_rig_drift_and_eval_hygiene.md) |
+| 15 | Four-camera rig bring-up (USB bandwidth, stable paths, table-frame calibration) | [`docs/15_multi_camera_rig_bringup.md`](docs/15_multi_camera_rig_bringup.md) |
 
 ## Hardware
 
