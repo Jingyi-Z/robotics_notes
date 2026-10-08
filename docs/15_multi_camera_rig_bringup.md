@@ -216,3 +216,44 @@ About three minutes before any recording or rollout:
    saved one. A shift of a few millimeters is normal. A larger one means a
    camera was bumped.
 3. Remove the board and start.
+
+## 9. Three traps found after the first week
+
+These showed up on the second recalibration and the first real recording
+session. Each one produces an error that looks like something else.
+
+1. **The board is not at table height.** A printed board glued to a stiff
+   backing can be several millimeters thick. With the board frame at z = 0,
+   the table surface sits at z = -thickness, not at zero. If you back-project
+   table points onto z = 0, the two side cameras disagree with each other by
+   a centimeter or more, which looks exactly like camera drift. Measure the
+   stack with calipers and intersect rays with the real table plane:
+
+   ```python
+   import cv2, numpy as np
+
+   def pixel_to_table(uv, K, dist, R_wc, t_wc, board_thickness_m):
+       # R_wc, t_wc: camera orientation and position in the board frame (section 7)
+       pts = cv2.undistortPoints(np.array([[uv]], np.float32), K, dist).reshape(2)
+       ray = R_wc @ np.array([pts[0], pts[1], 1.0])
+       z_table = -board_thickness_m
+       s = (z_table - t_wc[2]) / ray[2]
+       return t_wc + s * ray            # point on the table in the board frame
+   ```
+
+   A good check: reconstruct a few tape marks from every fixed camera. With
+   the right plane height they agree within a few millimeters. With the wrong
+   one they split by a constant offset along the line between the cameras.
+
+2. **Intrinsics belong to one resolution.** Many webcams crop or scale their
+   larger modes differently from 640x480. On one camera model the 960x720 mode
+   had a field of view about 2% different from the calibrated mode, enough to
+   shift reconstructed points by millimeters. Take every image used for
+   geometry at the resolution you calibrated, and use higher modes only for
+   looking.
+
+3. **Apply camera controls to every camera, not only the calibrated ones.**
+   The wrist camera has no extrinsics, so it is easy to leave it out of the
+   session opener. If its automatic frame rate control stays on, it slows down
+   in dim light and the recording times out on that camera. Include it when
+   setting the controls from section 5.
